@@ -96,3 +96,61 @@
     @
   repeat
   drop ;
+
+\ ── Section 10: Graphics workbench (vm32g) ──────────────────────────────────
+\ Requires: C primitives draw-pixel draw-line draw-rect draw-circle set-color
+\           clear canvas-w canvas-h key-pressed? last-key key-down?
+\           sin-deg cos-deg
+
+\ Default game loop hooks — override these in your program
+: update ( -- ) ;
+: draw   ( -- ) ;
+
+\ ── Key constants (Raylib key codes) ─────────────────────────────────────────
+32  constant KEY_SPACE
+257 constant KEY_ENTER
+256 constant KEY_ESCAPE
+262 constant KEY_RIGHT
+263 constant KEY_LEFT
+265 constant KEY_UP
+264 constant KEY_DOWN
+
+\ ── Turtle graphics ──────────────────────────────────────────────────────────
+\ Turtle state
+variable turtle-x    \ integer pixels from canvas centre
+variable turtle-y
+variable turtle-h    \ heading: 0=East, 90=North (degrees, CCW positive)
+variable turtle-pen  \ 0=up 1=down
+
+variable .ox  variable .oy   \ saved old position (scratch)
+
+: home ( -- )
+    0 turtle-x !   0 turtle-y !
+    90 turtle-h !  1 turtle-pen ! ;
+
+\ Move forward n pixels in current direction
+: forward ( n -- )
+    turtle-x @ .ox !
+    turtle-y @ .oy !
+    dup  turtle-h @ cos-deg * 1000 / turtle-x +!
+         turtle-h @ sin-deg * 1000 / turtle-y +!
+    turtle-pen @ if
+        .ox @ .oy @ turtle-x @ turtle-y @ draw-line
+    then ;
+
+: back ( n -- ) negate forward ;
+
+\ Turn right (clockwise) by n degrees
+: right ( n -- ) negate turtle-h +! ;
+
+\ Turn left (counter-clockwise) by n degrees
+: left  ( n -- )        turtle-h +! ;
+
+: penup   ( -- ) 0 turtle-pen ! ;
+: pendown ( -- ) 1 turtle-pen ! ;
+
+\ Set turtle draw colour
+: setcolor ( r g b a -- ) set-color ;
+
+\ Initialise turtle at startup
+home
