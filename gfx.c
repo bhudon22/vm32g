@@ -156,7 +156,7 @@ void gfx_run(VM *vm) {
 
         /* Call Forth 'update' word if defined */
         uint32_t xt = dict_find(vm, "update", 6);
-        if (xt) { vm->ip = dict_body(vm, xt); vm_run(vm); }
+        if (xt) { vm->rsp = 0; vm->ip = dict_body(vm, xt); vm_run(vm); }
 
         /* --- Draw phase --- */
         BeginDrawing();
@@ -164,7 +164,7 @@ void gfx_run(VM *vm) {
 
             /* Call Forth 'draw' word if defined */
             xt = dict_find(vm, "draw", 4);
-            if (xt) { vm->ip = dict_body(vm, xt); vm_run(vm); }
+            if (xt) { vm->rsp = 0; vm->ip = dict_body(vm, xt); vm_run(vm); }
 
             /* Render left panel on top */
             draw_left_panel();
