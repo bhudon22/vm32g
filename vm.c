@@ -1020,11 +1020,11 @@ l_setimm: {
 
 /* OP_TYPE */
 l_type: {
-    int32_t u    = dpop(vm);
-    int32_t addr = dpop(vm);
+    int32_t  u    = dpop(vm);
+    uint32_t addr = (uint32_t)dpop(vm);
     char buf[2] = { 0, 0 };
     for (int32_t i = 0; i < u; i++) {
-        buf[0] = (char)vm->mem[addr + i];
+        buf[0] = (char)vm->mem[addr + (uint32_t)i];
         gfx_print(buf);
     }
     NEXT;
