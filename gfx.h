@@ -12,12 +12,12 @@ struct VM;
  * Layout constants
  * ------------------------------------------------------------------------- */
 #define WINDOW_W       1280
-#define WINDOW_H       720
+#define WINDOW_H       648
 #define PANEL_SPLIT    512      /* left panel width (40%) */
 #define CANVAS_W       768      /* right panel width (60%) */
-#define CANVAS_H       720
+#define CANVAS_H       648
 #define CANVAS_CX      384      /* canvas centre X in texture space */
-#define CANVAS_CY      360      /* canvas centre Y in texture space */
+#define CANVAS_CY      324      /* canvas centre Y in texture space */
 
 /* -------------------------------------------------------------------------
  * Text panel
