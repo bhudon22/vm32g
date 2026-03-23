@@ -16,6 +16,7 @@
  */
 
 #include "vm.h"
+#include "gfx.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -179,12 +180,9 @@ int main(int argc, char **argv)
 
     /* 3. Normal startup */
     vm_init(vm);
-    puts("vm32 forth");
-    if (vm_load(vm, "kernel.fth") == 0)
-        puts("kernel.fth loaded");
-    else
+    if (vm_load(vm, "kernel.fth") != 0)
         fputs("warning: kernel.fth not found — bare session (C primitives only)\n", stderr);
-    vm_repl(vm);
+    gfx_run((struct VM *)vm);
     goto done;  /* must not fall through to run_turnkey: */
 
 run_turnkey:
@@ -192,7 +190,7 @@ run_turnkey:
         vm->ip = turnkey_xt;
         vm_run(vm);
     } else {
-        vm_repl(vm);
+        gfx_run((struct VM *)vm);
     }
 
 done:
