@@ -298,7 +298,7 @@
  * VM state
  * ------------------------------------------------------------------------- */
 
-typedef struct {
+typedef struct VM {
     uint8_t  mem[MEM_SIZE];     /* flat byte-addressed memory */
 
     int32_t  ds[STACK_DEPTH];   /* data stack — signed 32-bit cells */

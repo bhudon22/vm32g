@@ -182,7 +182,7 @@ int main(int argc, char **argv)
     vm_init(vm);
     if (vm_load(vm, "kernel.fth") != 0)
         fputs("warning: kernel.fth not found — bare session (C primitives only)\n", stderr);
-    gfx_run((struct VM *)vm);
+    gfx_run(vm);
     goto done;  /* must not fall through to run_turnkey: */
 
 run_turnkey:
@@ -190,7 +190,7 @@ run_turnkey:
         vm->ip = turnkey_xt;
         vm_run(vm);
     } else {
-        gfx_run((struct VM *)vm);
+        gfx_run(vm);
     }
 
 done:
