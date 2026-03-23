@@ -1,0 +1,4 @@
+forth
+*.o
+*.dSYM
+forth.img
