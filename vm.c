@@ -15,6 +15,7 @@
  */
 
 #include "vm.h"
+#include "gfx.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -763,9 +764,10 @@ l_zeroeq: { dpush(vm, dpop(vm) == 0 ? -1 : 0); NEXT; }
 
 /* --- I/O ------------------------------------------------------------- */
 
+/* OP_EMIT */
 l_emit: {
-    putchar((int)(dpop(vm) & 0xFF));
-    fflush(stdout);
+    char buf[2] = { (char)(dpop(vm) & 0xFF), '\0' };
+    gfx_print(buf);
     NEXT;
 }
 
@@ -775,17 +777,23 @@ l_key: {
     NEXT;
 }
 
+/* OP_DOT */
 l_dot: {
-    printf("%d ", (int)dpop(vm));
-    fflush(stdout);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%d ", (int)dpop(vm));
+    gfx_print(buf);
     NEXT;
 }
 
+/* OP_DOTS */
 l_dots: {
-    printf("<%d> ", vm->dsp + 1);
-    for (int i = 0; i <= vm->dsp; i++)
-        printf("%d ", (int)vm->ds[i]);
-    fflush(stdout);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "<%d> ", vm->dsp + 1);
+    gfx_print(buf);
+    for (int i = 0; i <= vm->dsp; i++) {
+        snprintf(buf, sizeof(buf), "%d ", (int)vm->ds[i]);
+        gfx_print(buf);
+    }
     NEXT;
 }
 
@@ -811,8 +819,8 @@ l_rfrom: dpush(vm, vm->rs[--vm->rsp]);            NEXT;
 
 /* --- Output shortcuts ------------------------------------------------ */
 
-l_cr:    putchar('\n'); fflush(stdout); NEXT;
-l_space: putchar(' ');  fflush(stdout); NEXT;
+/* OP_CR */    l_cr:    gfx_print("\n"); NEXT;
+/* OP_SPACE */ l_space: gfx_print(" ");  NEXT;
 
 /* --- Compile-time control flow --------------------------------------- *
  *
@@ -1010,13 +1018,15 @@ l_setimm: {
 
 /* --- Step 9: TYPE ACCEPT MOVE FILL ---------------------------------- */
 
+/* OP_TYPE */
 l_type: {
-    /* type ( c-addr u -- )  print u bytes from VM memory as ASCII */
-    int32_t  u    = dpop(vm);
-    uint32_t addr = (uint32_t)dpop(vm);
-    for (int32_t i = 0; i < u; i++)
-        putchar(vm->mem[addr + i]);
-    fflush(stdout);
+    int32_t u    = dpop(vm);
+    int32_t addr = dpop(vm);
+    char buf[2] = { 0, 0 };
+    for (int32_t i = 0; i < u; i++) {
+        buf[0] = (char)vm->mem[addr + i];
+        gfx_print(buf);
+    }
     NEXT;
 }
 
@@ -1973,9 +1983,11 @@ int vm_eval(VM *vm, const char *line)
             if (*p == '"') p++;
 
             if (!compiling) {
-                for (int i = 0; i < len; i++)
-                    putchar(str[i]);
-                fflush(stdout);
+                char cbuf[2] = { 0, 0 };
+                for (int i = 0; i < len; i++) {
+                    cbuf[0] = str[i];
+                    gfx_print(cbuf);
+                }
             } else {
                 emit_byte(vm, OP_JMP);
                 uint32_t patch    = vm->here;
@@ -2000,9 +2012,8 @@ int vm_eval(VM *vm, const char *line)
          * ------------------------------------------------------------------- */
         if (strcmp(token, ".(") == 0) {
             if (*p == ' ') p++;
-            while (*p && *p != ')') { putchar(*p++); }
+            { char cbuf[2] = { 0, 0 }; while (*p && *p != ')') { cbuf[0] = *p++; gfx_print(cbuf); } }
             if (*p == ')') p++;
-            fflush(stdout);
             write32(vm, ADDR_IN, (uint32_t)(p - line));
             continue;
         }
