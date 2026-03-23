@@ -77,17 +77,102 @@ int  gfx_key_down(int keycode)                            { (void)keycode; retur
 /* -------------------------------------------------------------------------
  * gfx_run — Raylib window loop (panels wired in Tasks 9, 10)
  * ------------------------------------------------------------------------- */
-void gfx_run(struct VM *vm) {
-    (void)vm;
+
+/* REPL input state */
+static char  input_buf[256];
+static int   input_len = 0;
+
+/* Render left panel: text buffer + input line */
+static void draw_left_panel(void) {
+    /* Panel background */
+    DrawRectangle(0, 0, PANEL_SPLIT, WINDOW_H, (Color){20, 20, 30, 255});
+
+    int x = 4;
+    int y = 4;
+    int font = TEXT_FONT_SIZE;
+
+    /* Show last TEXT_VISIBLE lines from the buffer */
+    int start = tbuf.count > TEXT_VISIBLE ? tbuf.count - TEXT_VISIBLE : 0;
+    for (int i = start; i < tbuf.count; i++) {
+        DrawText(tbuf_line(i), x, y, font, (Color){200, 200, 200, 255});
+        y += font + 2;
+    }
+
+    /* Input line with cursor */
+    int input_y = WINDOW_H - font - 6;
+    DrawText("> ", x, input_y, font, (Color){100, 220, 100, 255});
+    DrawText(input_buf, x + 16, input_y, font, (Color){255, 255, 255, 255});
+    /* Blinking cursor */
+    if ((GetTime() * 2.0 - (int)(GetTime() * 2.0)) < 0.5) {
+        int cursor_x = x + 16 + MeasureText(input_buf, font);
+        DrawText("_", cursor_x, input_y, font, (Color){255, 255, 100, 255});
+    }
+}
+
+/* Handle keyboard input for REPL */
+static void handle_repl_input(VM *vm) {
+    /* Printable characters */
+    int c;
+    while ((c = GetCharPressed()) > 0) {
+        if (c >= 32 && c <= 126 && input_len < 255) {
+            input_buf[input_len++] = (char)c;
+            input_buf[input_len]   = '\0';
+        }
+    }
+
+    /* Backspace */
+    if (IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) {
+        if (input_len > 0) {
+            input_buf[--input_len] = '\0';
+        }
+    }
+
+    /* Enter — evaluate */
+    if (IsKeyPressed(KEY_ENTER)) {
+        /* Echo the input line */
+        gfx_print("> ");
+        gfx_print(input_buf);
+        gfx_print("\n");
+
+        if (input_len > 0) {
+            int result = vm_eval(vm, input_buf);
+            if (result == 0)
+                gfx_print("ok\n");
+            /* vm_eval already prints error details via gfx_print in vm.c */
+        }
+
+        input_buf[0] = '\0';
+        input_len = 0;
+    }
+}
+
+void gfx_run(VM *vm) {
     InitWindow(WINDOW_W, WINDOW_H, "vm32g forth");
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
+        /* --- Update phase --- */
+        handle_repl_input(vm);
+
+        /* Call Forth 'update' word if defined */
+        uint32_t xt = dict_find(vm, "update", 6);
+        if (xt) { vm->ip = dict_body(vm, xt); vm_run(vm); }
+
+        /* --- Draw phase --- */
         BeginDrawing();
             ClearBackground(BLACK);
-            /* Divider line between panels */
+
+            /* Call Forth 'draw' word if defined */
+            xt = dict_find(vm, "draw", 4);
+            if (xt) { vm->ip = dict_body(vm, xt); vm_run(vm); }
+
+            /* Render left panel on top */
+            draw_left_panel();
+
+            /* Panel divider */
             DrawLine(PANEL_SPLIT, 0, PANEL_SPLIT, WINDOW_H, DARKGRAY);
         EndDrawing();
     }
+
     CloseWindow();
 }
