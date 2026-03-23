@@ -6,6 +6,8 @@
 /* Global graphics state */
 GfxState gfx = { 255, 255, 255, 255 };   /* default: white */
 
+static RenderTexture2D canvas_tex;
+
 /* -------------------------------------------------------------------------
  * Text buffer
  * ------------------------------------------------------------------------- */
@@ -63,16 +65,66 @@ void gfx_print(const char *s) {
 }
 
 /* -------------------------------------------------------------------------
- * Drawing stubs — replaced with real Raylib calls in Task 10
+ * Coordinate transform helper
+ * Convert Forth canvas coords (centre origin, Y-up) to texture pixel coords
  * ------------------------------------------------------------------------- */
-void gfx_draw_pixel(int x, int y)                         { (void)x; (void)y; }
-void gfx_draw_line(int x1, int y1, int x2, int y2)        { (void)x1; (void)y1; (void)x2; (void)y2; }
-void gfx_draw_rect(int x, int y, int w, int h)            { (void)x; (void)y; (void)w; (void)h; }
-void gfx_draw_circle(int x, int y, int r)                 { (void)x; (void)y; (void)r; }
-void gfx_clear_canvas(void)                               {}
-int  gfx_key_pressed(void)                                { return 0; }
-int  gfx_last_key(void)                                   { return 0; }
-int  gfx_key_down(int keycode)                            { (void)keycode; return 0; }
+static void forth_to_tex(int fx, int fy, int *tx, int *ty) {
+    *tx = CANVAS_CX + fx;
+    *ty = CANVAS_CY - fy;   /* Y-up: negate Y */
+}
+
+/* -------------------------------------------------------------------------
+ * Drawing functions — real Raylib implementations
+ * ------------------------------------------------------------------------- */
+void gfx_draw_pixel(int x, int y) {
+    int tx, ty; forth_to_tex(x, y, &tx, &ty);
+    Color c = { gfx.color_r, gfx.color_g, gfx.color_b, gfx.color_a };
+    BeginTextureMode(canvas_tex);
+        DrawPixel(tx, ty, c);
+    EndTextureMode();
+}
+
+void gfx_draw_line(int x1, int y1, int x2, int y2) {
+    int tx1, ty1, tx2, ty2;
+    forth_to_tex(x1, y1, &tx1, &ty1);
+    forth_to_tex(x2, y2, &tx2, &ty2);
+    Color c = { gfx.color_r, gfx.color_g, gfx.color_b, gfx.color_a };
+    BeginTextureMode(canvas_tex);
+        DrawLine(tx1, ty1, tx2, ty2, c);
+    EndTextureMode();
+}
+
+void gfx_draw_rect(int x, int y, int w, int h) {
+    int tx, ty; forth_to_tex(x, y, &tx, &ty);
+    Color c = { gfx.color_r, gfx.color_g, gfx.color_b, gfx.color_a };
+    BeginTextureMode(canvas_tex);
+        DrawRectangleLines(tx, ty, w, h, c);
+    EndTextureMode();
+}
+
+void gfx_draw_circle(int x, int y, int r) {
+    int tx, ty; forth_to_tex(x, y, &tx, &ty);
+    Color c = { gfx.color_r, gfx.color_g, gfx.color_b, gfx.color_a };
+    BeginTextureMode(canvas_tex);
+        DrawCircleLines(tx, ty, (float)r, c);
+    EndTextureMode();
+}
+
+void gfx_clear_canvas(void) {
+    BeginTextureMode(canvas_tex);
+        ClearBackground(BLACK);
+    EndTextureMode();
+}
+
+/* key_pressed? caches the key so last-key can return it.
+ * Call key-pressed? first each frame, then last-key. */
+static int _last_key_cache = 0;
+int gfx_key_pressed(void) {
+    _last_key_cache = GetKeyPressed();
+    return _last_key_cache != 0;
+}
+int gfx_last_key(void) { return _last_key_cache; }
+int gfx_key_down(int k) { return IsKeyDown(k); }
 
 /* -------------------------------------------------------------------------
  * gfx_run — Raylib window loop (panels wired in Tasks 9, 10)
@@ -148,6 +200,11 @@ static void handle_repl_input(VM *vm) {
 
 void gfx_run(VM *vm) {
     InitWindow(WINDOW_W, WINDOW_H, "vm32g forth");
+    canvas_tex = LoadRenderTexture(CANVAS_W, CANVAS_H);
+    /* Initial clear: black canvas */
+    BeginTextureMode(canvas_tex);
+        ClearBackground(BLACK);
+    EndTextureMode();
     SetTargetFPS(60);
 
     while (!WindowShouldClose()) {
@@ -166,6 +223,13 @@ void gfx_run(VM *vm) {
             xt = dict_find(vm, "draw", 4);
             if (xt) { vm->rsp = 0; vm->ip = dict_body(vm, xt); vm_run(vm); }
 
+            /* Blit canvas texture to right panel */
+            /* Raylib RenderTextures are flipped vertically — use negative height */
+            Rectangle src  = { 0, 0,  (float)CANVAS_W, -(float)CANVAS_H };
+            Rectangle dest = { PANEL_SPLIT, 0, CANVAS_W, CANVAS_H };
+            Vector2   orig = { 0, 0 };
+            DrawTexturePro(canvas_tex.texture, src, dest, orig, 0.0f, WHITE);
+
             /* Render left panel on top */
             draw_left_panel();
 
@@ -174,5 +238,6 @@ void gfx_run(VM *vm) {
         EndDrawing();
     }
 
+    UnloadRenderTexture(canvas_tex);
     CloseWindow();
 }
