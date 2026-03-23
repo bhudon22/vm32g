@@ -1,7 +1,7 @@
 #include "gfx.h"
 #include "vm.h"
 #include <string.h>
-#include <stdio.h>
+#include "raylib.h"
 
 /* Global graphics state */
 GfxState gfx = { 255, 255, 255, 255 };   /* default: white */
@@ -63,6 +63,19 @@ void gfx_print(const char *s) {
 }
 
 /* -------------------------------------------------------------------------
- * Stub gfx_run — will be filled out in Tasks 5, 9, 10
+ * gfx_run — Raylib window loop (panels wired in Tasks 9, 10)
  * ------------------------------------------------------------------------- */
-void gfx_run(struct VM *vm) { (void)vm; }
+void gfx_run(struct VM *vm) {
+    (void)vm;
+    InitWindow(WINDOW_W, WINDOW_H, "vm32g forth");
+    SetTargetFPS(60);
+
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+            ClearBackground(BLACK);
+            /* Divider line between panels */
+            DrawLine(PANEL_SPLIT, 0, PANEL_SPLIT, WINDOW_H, DARKGRAY);
+        EndDrawing();
+    }
+    CloseWindow();
+}
