@@ -25,7 +25,7 @@ struct VM;
 #define TEXT_COLS      64       /* max chars per line */
 #define TEXT_ROWS      100      /* scrollback lines */
 #define TEXT_FONT_SIZE 14
-#define TEXT_VISIBLE   ((WINDOW_H - 30) / TEXT_FONT_SIZE)  /* ~47 visible rows */
+#define TEXT_VISIBLE   ((WINDOW_H - 30) / TEXT_FONT_SIZE)  /* ~49 visible rows */
 
 typedef struct {
     char   lines[TEXT_ROWS][TEXT_COLS + 1];
