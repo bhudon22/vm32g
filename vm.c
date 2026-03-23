@@ -22,6 +22,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <math.h>
 
 /* =========================================================================
  * Compile-time loop stack — shared between vm_run (DO/LOOP handlers) and
@@ -285,6 +286,21 @@ void vm_init(VM *vm)
     def_prim(vm, "latest",     OP_LATEST);
     def_prim(vm, "set-here",   OP_SETHERE);
     def_prim(vm, "set-latest", OP_SETLATEST);
+
+    /* Graphics and input (vm32g) */
+    def_prim(vm, "draw-pixel",  OP_DRAW_PIXEL);
+    def_prim(vm, "draw-line",   OP_DRAW_LINE);
+    def_prim(vm, "draw-rect",   OP_DRAW_RECT);
+    def_prim(vm, "draw-circle", OP_DRAW_CIRCLE);
+    def_prim(vm, "set-color",   OP_SET_COLOR);
+    def_prim(vm, "clear",       OP_CLEAR);
+    def_prim(vm, "canvas-w",    OP_CANVAS_W);
+    def_prim(vm, "canvas-h",    OP_CANVAS_H);
+    def_prim(vm, "key-pressed?",OP_KEY_PRESSED);
+    def_prim(vm, "last-key",    OP_LAST_KEY);
+    def_prim(vm, "key-down?",   OP_KEY_DOWN);
+    def_prim(vm, "sin-deg",     OP_SIN_DEG);
+    def_prim(vm, "cos-deg",     OP_COS_DEG);
 
     /* Stack */
     def_prim(vm, "dup",    OP_DUP);
@@ -585,6 +601,19 @@ void vm_run(VM *vm)
         tbl[OP_LATEST]    = &&l_latest;
         tbl[OP_SETHERE]   = &&l_sethere;
         tbl[OP_SETLATEST] = &&l_setlatest;
+        tbl[OP_DRAW_PIXEL]  = &&l_draw_pixel;
+        tbl[OP_DRAW_LINE]   = &&l_draw_line;
+        tbl[OP_DRAW_RECT]   = &&l_draw_rect;
+        tbl[OP_DRAW_CIRCLE] = &&l_draw_circle;
+        tbl[OP_SET_COLOR]   = &&l_set_color;
+        tbl[OP_CLEAR]       = &&l_clear;
+        tbl[OP_CANVAS_W]    = &&l_canvas_w;
+        tbl[OP_CANVAS_H]    = &&l_canvas_h;
+        tbl[OP_KEY_PRESSED] = &&l_key_pressed;
+        tbl[OP_LAST_KEY]    = &&l_last_key;
+        tbl[OP_KEY_DOWN]    = &&l_key_down;
+        tbl[OP_SIN_DEG]     = &&l_sin_deg;
+        tbl[OP_COS_DEG]     = &&l_cos_deg;
         ready = 1;
     }
 
@@ -654,6 +683,73 @@ l_turnkey:   { uint32_t xt = (uint32_t)dpop(vm); do_save_image(vm, xt); NEXT; }
 l_latest:    { dpush(vm, (int32_t)vm->latest);          NEXT; }
 l_sethere:   { vm->here   = (uint32_t)dpop(vm);        NEXT; }
 l_setlatest: { vm->latest = (uint32_t)dpop(vm);        NEXT; }
+
+/* --- Graphics and input (vm32g) --------------------------------------- */
+
+l_draw_pixel: {
+    int32_t y = dpop(vm);
+    int32_t x = dpop(vm);
+    gfx_draw_pixel(x, y);
+    NEXT;
+}
+l_draw_line: {
+    int32_t y2 = dpop(vm), x2 = dpop(vm);
+    int32_t y1 = dpop(vm), x1 = dpop(vm);
+    gfx_draw_line(x1, y1, x2, y2);
+    NEXT;
+}
+l_draw_rect: {
+    int32_t h = dpop(vm), w = dpop(vm);
+    int32_t y = dpop(vm), x = dpop(vm);
+    gfx_draw_rect(x, y, w, h);
+    NEXT;
+}
+l_draw_circle: {
+    int32_t r = dpop(vm);
+    int32_t y = dpop(vm), x = dpop(vm);
+    gfx_draw_circle(x, y, r);
+    NEXT;
+}
+l_set_color: {
+    int32_t a = dpop(vm), b = dpop(vm);
+    int32_t g = dpop(vm), r = dpop(vm);
+    gfx.color_r = (uint8_t)(r & 0xFF);
+    gfx.color_g = (uint8_t)(g & 0xFF);
+    gfx.color_b = (uint8_t)(b & 0xFF);
+    gfx.color_a = (uint8_t)(a & 0xFF);
+    NEXT;
+}
+l_clear: {
+    gfx_clear_canvas();
+    NEXT;
+}
+l_canvas_w: { dpush(vm, CANVAS_W); NEXT; }
+l_canvas_h: { dpush(vm, CANVAS_H); NEXT; }
+l_key_pressed: {
+    dpush(vm, gfx_key_pressed() ? -1 : 0);
+    NEXT;
+}
+l_last_key: {
+    dpush(vm, gfx_last_key());
+    NEXT;
+}
+l_key_down: {
+    int32_t keycode = dpop(vm);
+    dpush(vm, gfx_key_down(keycode) ? -1 : 0);
+    NEXT;
+}
+l_sin_deg: {
+    int32_t deg = dpop(vm) % 360;
+    if (deg < 0) deg += 360;
+    dpush(vm, (int32_t)(sin(deg * M_PI / 180.0) * 1000.0));
+    NEXT;
+}
+l_cos_deg: {
+    int32_t deg = dpop(vm) % 360;
+    if (deg < 0) deg += 360;
+    dpush(vm, (int32_t)(cos(deg * M_PI / 180.0) * 1000.0));
+    NEXT;
+}
 l_depth:  { dpush(vm, (int32_t)(vm->dsp + 1)); NEXT; }
 l_abs:    { int32_t n = dpop(vm); dpush(vm, n < 0 ? -n : n); NEXT; }
 l_max:    { int32_t b = dpop(vm), a = dpop(vm); dpush(vm, a > b ? a : b); NEXT; }

@@ -63,6 +63,18 @@ void gfx_print(const char *s) {
 }
 
 /* -------------------------------------------------------------------------
+ * Drawing stubs — replaced with real Raylib calls in Task 10
+ * ------------------------------------------------------------------------- */
+void gfx_draw_pixel(int x, int y)                         { (void)x; (void)y; }
+void gfx_draw_line(int x1, int y1, int x2, int y2)        { (void)x1; (void)y1; (void)x2; (void)y2; }
+void gfx_draw_rect(int x, int y, int w, int h)            { (void)x; (void)y; (void)w; (void)h; }
+void gfx_draw_circle(int x, int y, int r)                 { (void)x; (void)y; (void)r; }
+void gfx_clear_canvas(void)                               {}
+int  gfx_key_pressed(void)                                { return 0; }
+int  gfx_last_key(void)                                   { return 0; }
+int  gfx_key_down(int keycode)                            { (void)keycode; return 0; }
+
+/* -------------------------------------------------------------------------
  * gfx_run — Raylib window loop (panels wired in Tasks 9, 10)
  * ------------------------------------------------------------------------- */
 void gfx_run(struct VM *vm) {

@@ -52,4 +52,14 @@ void gfx_print(const char *s);
 /* Open window, run frame loop until window is closed. */
 void gfx_run(struct VM *vm);
 
+/* Called from vm.c opcode handlers */
+void gfx_draw_pixel(int x, int y);
+void gfx_draw_line(int x1, int y1, int x2, int y2);
+void gfx_draw_rect(int x, int y, int w, int h);
+void gfx_draw_circle(int x, int y, int r);
+void gfx_clear_canvas(void);
+int  gfx_key_pressed(void);
+int  gfx_last_key(void);
+int  gfx_key_down(int keycode);
+
 #endif /* GFX_H */

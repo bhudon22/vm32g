@@ -247,6 +247,21 @@
 #define OP_SETHERE    0x84  /* set-here   ( addr -- ) set vm->here                          */
 #define OP_SETLATEST  0x85  /* set-latest ( addr -- ) set vm->latest                        */
 
+/* Graphics and input (vm32g additions) */
+#define OP_DRAW_PIXEL  0x86  /* draw-pixel  ( x y -- )        */
+#define OP_DRAW_LINE   0x87  /* draw-line   ( x1 y1 x2 y2 -- )*/
+#define OP_DRAW_RECT   0x88  /* draw-rect   ( x y w h -- )    */
+#define OP_DRAW_CIRCLE 0x89  /* draw-circle ( x y r -- )      */
+#define OP_SET_COLOR   0x8A  /* set-color   ( r g b a -- )    */
+#define OP_CLEAR       0x8B  /* clear       ( -- )            */
+#define OP_CANVAS_W    0x8C  /* canvas-w    ( -- w )          */
+#define OP_CANVAS_H    0x8D  /* canvas-h    ( -- h )          */
+#define OP_KEY_PRESSED 0x8E  /* key-pressed?( -- flag )       */
+#define OP_LAST_KEY    0x8F  /* last-key    ( -- keycode )    */
+#define OP_KEY_DOWN    0x90  /* key-down?   ( keycode -- flag)*/
+#define OP_SIN_DEG     0x91  /* sin-deg     ( deg -- n*1000 ) */
+#define OP_COS_DEG     0x92  /* cos-deg     ( deg -- n*1000 ) */
+
 /* Compile-time control flow (IMMEDIATE words — run at compile time, not runtime)
  *
  * These opcodes manipulate HERE and the data stack to build JZ/JMP chains.
